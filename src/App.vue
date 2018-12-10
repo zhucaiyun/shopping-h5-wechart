@@ -5,8 +5,23 @@
       <router-link to="/about">About</router-link>
     </div>
     <router-view/>
+    <Tips />
   </div>
 </template>
+<script lang="ts">
+import { Component, Vue } from 'vue-property-decorator'
+import Tips from '@/components/Tips.vue'
+
+@Component({
+  components: {
+    Tips
+  }
+  })
+export default class App extends Vue {
+  
+}
+
+</script>
 
 <style lang="scss">
 #app {

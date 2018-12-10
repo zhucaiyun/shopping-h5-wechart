@@ -14,7 +14,9 @@ module.exports = {
     'no-trailing-spaces': 'off',
     'semi': 'off',
     'no-tabs': 'off',
-    'indent': 'off'
+    'indent': 'off',
+    'no-multi-spaces': 'off',
+    'one-var': 'off'
   },
   parserOptions: {
     parser: 'typescript-eslint-parser'

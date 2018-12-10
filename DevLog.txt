@@ -1,0 +1,119 @@
+1.vue中 addEventListener绑定事件时，function直接写在addEventListener中存在偶发绑定失败问题
+  例：
+    el.addEventListener('transitionend', function(){}, false)，在刷新页面时偶发性绑定失败，经测试此方式绑定事件耗费时间比较久
+  解决：
+    把function拿出来，基本不存在延迟，绑定快
+    成功：el.addEventListener('transitionend', eventTransitionend, false)
+
+2.使用vue+typeScript的class时，不要声明Object类型，即便在声明时不报错，但在调用属性时也会报错
+  例：
+    datas: Object = {a:1}
+    在方法中使用获取a：
+    this.datas.a // 报错
+
+  后发现：this.datas['a']这样调用不会报错，个人还是觉着声明any类型比较好
+
+  解决：
+    使用any类型替换
+    datas: any = {a:1}
+3.style使用scoped模式中，使用动画：@keyframe时，动画名会被加上hash码导致动画设置失败
+  例：
+    @keyframe toTop {}，解析为：@keyframe toTop-ecd4be54 {}
+  解决： 
+    @keyframe 放在单独的不使用scoped模式的style中
+4.排行无缝滚动效果实现
+  <div id="parent">
+    <div class="list"></div>
+    ...
+  </div>
+  舍弃方法：
+    (1) 父元素parent设置css3 animation 
+      优点：不需要使用js操作dom，无消耗。实现简单方便
+      缺点：不能自定义滚动高度
+    (2) 子元素list 定位+js 通过设置滚动元素的top值实现
+      优点：思路清晰
+      缺点：滚动效果不太好，执行占用大量内存
+    (3) 设置两个父元素parent，在parent层级实现无缝滚动
+      优点：简单，不必考虑子元素个数
+      缺点：生成大量多余dom
+  当前使用方法
+    子元素list transform+定位(多个同级元素使用transform距离是以相邻元素为起点，通过定位实现父元素为起点)
+    每次把队列前滚动到视区之外的子元素移到队列最后
+    优点:
+      去掉(2)中top滚动的方式改用transform，使用硬件加速(GPU绘制动画)，相对不占cpu内存。动画比较连贯
+    缺点：
+      需要操作dom
+5.无缝滚动60秒刷新数据时动画出现问题
+  问题1：dom不更新(因为数据是一样的，所以用普通的id标识不行)
+  解决： 
+    获取到json之后，循环给数组中的每个对象添加id：Date.now() + '' + i;
+
+  问题2：重新请求数据之后,会多次绑定事件(transitionend)， removeEventListener无法解除绑定transitionend事件
+  解决： 
+    添加事件锁，第一次绑定事件时后锁上绑定事件的方法
+
+  问题3！！！(弄了一下午)：在问题2的基础上，因为只绑定了一次事件，重新请求数据之后，事件方法中的变量是用的是之前的，并不是用的外部重新声明的，导致动画出现问题
+  解决：
+    把事件方法中的变量绑定在元素上，例:
+    el.addEventListener('transitionend', eventTransitionend, false)
+    el.current = 0;
+  
+6.组件绑定动态props时无法给方法传参
+  例：
+    <RollingOfRankings :datas=computedPostParams('DayAreaRank')/> // 报错unexpected-character-in-unquoted-attribute-value
+
+7.eslint中不太利于使用的校验
+  1.eslint 不允许在语句后存在多余的空格，不方便vue绑定多属性
+    例：
+      <div
+        class="list"
+        v-for="(v,i) in rankList"
+        :key="i*2"
+        :style="{transform: 'translate(0, '+(175+i*35)+'px)'}"
+        :data-index="i"
+      >
+    在eslintrc.js中配置'no-trailing-spaces': 'off', 关闭此校验
+
+  2.语句不以分号结尾
+    在eslintrc.js中配置'semi': 'off'，关闭此校验
+
+8. import引入插件，报找不到声明模块错误：Could not find a declaration file for module
+  解决：
+    在shims-vue.d.ts 中声明引入的模块名称，例axios：
+    declare module 'axios' {
+      const axios: any;
+      export default axios;
+    }
+9. this调用隐式属性报属性未初始化类型
+  例：
+    this.get // 报错：property get does not exist on value of type
+  解决：
+    使用<this as any>.get 方式调用
+    或者声明变量替换
+    that: any = this;
+    that.get
+10. typeScript无法使用vuex的映射函数
+  例：  
+    export default class Tips extends Vue {
+      ...mapMutations(['方法名'])
+    }
+  暂未解决
+
+11. typeScript中vuex无法动态响应数据
+  例：
+    <templte>
+      <div>{{tips.title}}</div>
+    </templte>
+    export default class Tips extends Vue {
+      tips: any = this.$store.state.tips
+    }
+    其他组件中改变tips时templte中的值不会更新
+    change () {
+      this.$store.commit('changeTips', { show: true, title: '我是提示' })
+    }
+
+  暂时的解决方法(暂未找到标准的方法)：直接在templte中使用$store
+    <templte>
+      <div>{{$store.state.tips.title}}</div>
+    </templte>
+12.
